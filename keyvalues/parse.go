@@ -116,6 +116,8 @@ func readString(in *bufio.Reader) (s string, n int64, err error, special bool) {
 		if r == '\\' && quoted {
 			next := rr()
 			switch next {
+			case '\\':
+				// double backslash -> single backslash
 			case 'n':
 				r = '\n'
 			case 'r':
@@ -131,7 +133,6 @@ func readString(in *bufio.Reader) (s string, n int64, err error, special bool) {
 		}
 		buf = append(buf, r)
 	}
-	panic("unreachable")
 }
 
 type stack []*KeyValues

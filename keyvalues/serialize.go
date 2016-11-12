@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+var escaper = strings.NewReplacer("\\", "\\\\", "\n", "\\n", "\r", "\\r", "\t", "\\t", "\"", "\\\"")
+
 func (kv *KeyValues) WriteTo(w io.Writer) (n int64, err error) {
 	for i := range kv.complexValue {
 		var c int
@@ -20,7 +22,7 @@ func (kv *KeyValues) WriteTo(w io.Writer) (n int64, err error) {
 
 func (kv *KeyValues) writeIndented(w io.Writer, indent int) (n int, err error) {
 	indentString := strings.Repeat("\t", indent)
-	n, err = fmt.Fprintf(w, "%s%q ", indentString, kv.name)
+	n, err = fmt.Fprintf(w, "%s\"%s\" ", indentString, escaper.Replace(kv.name))
 	if err != nil {
 		return
 	}
@@ -28,7 +30,7 @@ func (kv *KeyValues) writeIndented(w io.Writer, indent int) (n int, err error) {
 	if kv.complexValue == nil {
 		var c int
 
-		c, err = fmt.Fprintf(w, "%q\n", kv.simpleValue)
+		c, err = fmt.Fprintf(w, "\"%s\"\n", escaper.Replace(kv.simpleValue))
 		n += c
 		if err != nil {
 			return
