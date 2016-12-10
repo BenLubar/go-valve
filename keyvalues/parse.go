@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"io"
+	"strings"
 	"unicode"
 )
 
@@ -44,6 +45,11 @@ func readString(in *bufio.Reader) (s string, n int64, err error, special bool) {
 			return r
 		}
 	)
+	defer func() {
+		if !quoted && strings.HasPrefix(s, "[$") && strings.HasSuffix(s, "]") {
+			special = true
+		}
+	}()
 
 	r := rr()
 
@@ -160,6 +166,7 @@ func (s *stack) pop() *KeyValues {
 func (kv *KeyValues) ReadFrom(r io.Reader) (n int64, err error) {
 	in := bufio.NewReader(r)
 
+	var last *KeyValues
 	var s = stack{kv}
 
 	for err == nil {
@@ -190,6 +197,7 @@ func (kv *KeyValues) ReadFrom(r io.Reader) (n int64, err error) {
 				err = errors.New("Unexpected '{': expecting '}' or a key")
 				return
 			case "}":
+				last = nil
 				s.pop()
 				if len(s) == 0 {
 					err = errors.New("Unexpected '}': expecting a key")
@@ -197,7 +205,18 @@ func (kv *KeyValues) ReadFrom(r io.Reader) (n int64, err error) {
 				}
 				continue
 			default:
-				// TODO: conditionals
+				if last == nil {
+					err = errors.New("Unexpected conditional: expecting a key")
+					return
+				}
+
+				// TODO: better conditionals
+				if key == "[$WIN32]" {
+					continue
+				}
+
+				last.Remove()
+				last = nil
 			}
 		}
 
@@ -228,7 +247,8 @@ func (kv *KeyValues) ReadFrom(r io.Reader) (n int64, err error) {
 			}
 		}
 
-		s.pop().SetValueString(value)
+		last = s.pop()
+		last.SetValueString(value)
 	}
 
 	return
