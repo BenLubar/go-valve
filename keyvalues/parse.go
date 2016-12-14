@@ -217,6 +217,7 @@ func (kv *KeyValues) ReadFrom(r io.Reader) (n int64, err error) {
 
 				last.Remove()
 				last = nil
+				continue
 			}
 		}
 
